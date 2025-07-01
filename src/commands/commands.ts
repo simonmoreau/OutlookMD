@@ -51,15 +51,76 @@ async function action(event: Office.AddinCommands.Event) {
     event.completed();
     return;
   }
+  try {
+    // Type assertion for AppointmentRead
+    const appointment = item as Office.AppointmentRead;
 
-  // Type assertion for AppointmentRead
-  const appointment = item as Office.AppointmentRead;
+    // Retrieve appointment details
+    const data = await GetAppointementDetails(appointment);
 
-  // Retrieve appointment details
-  const subject: string = await getValue<string>(item.subject);
-  const start = await getValue<Date>(item.start);
-  const end = await getValue<Date>(item.end);
-  const location = await getValue<string>(item.location);
+    const engine = new Liquid();
+    const rendered = await engine.parseAndRender(template, data);
+
+    // // Now `rendered` contains your Markdown string
+    // // Copy to clipboard
+    // if (navigator.clipboard && window.isSecureContext) {
+    //   await navigator.clipboard.writeText(rendered);
+    // } else {
+    //   // Fallback for older browsers or non-secure context
+    //   const textarea = document.createElement("textarea");
+    //   textarea.value = rendered;
+    //   document.body.appendChild(textarea);
+    //   textarea.select();
+    //   document.execCommand("copy");
+    //   document.body.removeChild(textarea);
+    // }
+
+    console.log(rendered);
+
+    Notify();
+
+    // Be sure to indicate when the add-in command function is complete.
+    event.completed();
+  } catch (error: any) {
+    // Show error notification
+    const errorMessage: Office.NotificationMessageDetails = {
+      type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
+      message: `Error: ${error.message || error}`,
+      icon: "Icon.80x80",
+      persistent: true,
+    };
+    Office.context.mailbox.item.notificationMessages.replaceAsync(
+      "ActionPerformanceNotification",
+      errorMessage
+    );
+  } finally {
+    event.completed();
+  }
+}
+
+// Register the function with Office.
+Office.actions.associate("action", action);
+
+function Notify() {
+  const message: Office.NotificationMessageDetails = {
+    type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
+    message: "The message has been copied",
+    icon: "Icon.80x80",
+    persistent: true,
+  };
+
+  // Show a notification message.
+  Office.context.mailbox.item.notificationMessages.replaceAsync(
+    "ActionPerformanceNotification",
+    message
+  );
+}
+
+async function GetAppointementDetails(appointment: Office.AppointmentRead) {
+  const subject: string = await getValue<string>(appointment.subject);
+  const start = await getValue<Date>(appointment.start);
+  const end = await getValue<Date>(appointment.end);
+  const location = await getValue<string>(appointment.location);
   const requiredAttendees: Office.EmailAddressDetails[] =
     (await getValue<Office.EmailAddressDetails[]>(appointment.requiredAttendees)) ?? [];
   const optionalAttendees: Office.EmailAddressDetails[] =
@@ -77,45 +138,8 @@ async function action(event: Office.AddinCommands.Event) {
     requiredAttendees,
     optionalAttendees,
   };
-
-  const engine = new Liquid();
-  const rendered = await engine.parseAndRender(template, data);
-
-  // // Now `rendered` contains your Markdown string
-  // // Copy to clipboard
-  // if (navigator.clipboard && window.isSecureContext) {
-  //   await navigator.clipboard.writeText(rendered);
-  // } else {
-  //   // Fallback for older browsers or non-secure context
-  //   const textarea = document.createElement("textarea");
-  //   textarea.value = rendered;
-  //   document.body.appendChild(textarea);
-  //   textarea.select();
-  //   document.execCommand("copy");
-  //   document.body.removeChild(textarea);
-  // }
-
-  console.log(rendered);
-
-  const message: Office.NotificationMessageDetails = {
-    type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
-    message: "The message has been copied",
-    icon: "Icon.80x80",
-    persistent: true,
-  };
-
-  // Show a notification message.
-  Office.context.mailbox.item.notificationMessages.replaceAsync(
-    "ActionPerformanceNotification",
-    message
-  );
-
-  // Be sure to indicate when the add-in command function is complete.
-  event.completed();
+  return data;
 }
-
-// Register the function with Office.
-Office.actions.associate("action", action);
 
 /**
  * Gets the value of a property from an Office object asynchronously.
