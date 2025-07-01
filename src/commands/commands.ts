@@ -4,6 +4,27 @@
  */
 
 /* global Office */
+import { Liquid } from "liquidjs";
+
+const template = `
+# Meeting: {{ subject }}
+
+**Start:** {{ start }}
+**End:** {{ end }}
+**Location:** {{ location }}
+
+**Organizer:** {{ organizer.displayName }} ({{ organizer.emailAddress }})
+
+**Required Attendees:**
+{% for attendee in requiredAttendees %}
+- {{ attendee.displayName }} ({{ attendee.emailAddress }})
+{% endfor %}
+
+**Optional Attendees:**
+{% for attendee in optionalAttendees %}
+- {{ attendee.displayName }} ({{ attendee.emailAddress }})
+{% endfor %}
+`;
 
 Office.onReady(() => {
   // If needed, Office.js is ready to be called.
@@ -39,13 +60,46 @@ async function action(event: Office.AddinCommands.Event) {
   const start = await getValue<Date>(item.start);
   const end = await getValue<Date>(item.end);
   const location = await getValue<string>(item.location);
-  const requiredAttendees: Office.EmailAddressDetails[] = await getValue<Office.EmailAddressDetails[]>(appointment.requiredAttendees) ?? [];
-  const optionalAttendees: Office.EmailAddressDetails[] = await getValue<Office.EmailAddressDetails[]>(appointment.optionalAttendees) ?? [];
-  const organizer: Office.EmailAddressDetails | undefined = await getValue<Office.EmailAddressDetails | undefined>(appointment.organizer);
+  const requiredAttendees: Office.EmailAddressDetails[] =
+    (await getValue<Office.EmailAddressDetails[]>(appointment.requiredAttendees)) ?? [];
+  const optionalAttendees: Office.EmailAddressDetails[] =
+    (await getValue<Office.EmailAddressDetails[]>(appointment.optionalAttendees)) ?? [];
+  const organizer: Office.EmailAddressDetails | undefined = await getValue<
+    Office.EmailAddressDetails | undefined
+  >(appointment.organizer);
+
+  const data = {
+    subject,
+    start: start.toLocaleString(),
+    end: end.toLocaleString(),
+    location,
+    organizer,
+    requiredAttendees,
+    optionalAttendees,
+  };
+
+  const engine = new Liquid();
+  const rendered = await engine.parseAndRender(template, data);
+
+  // // Now `rendered` contains your Markdown string
+  // // Copy to clipboard
+  // if (navigator.clipboard && window.isSecureContext) {
+  //   await navigator.clipboard.writeText(rendered);
+  // } else {
+  //   // Fallback for older browsers or non-secure context
+  //   const textarea = document.createElement("textarea");
+  //   textarea.value = rendered;
+  //   document.body.appendChild(textarea);
+  //   textarea.select();
+  //   document.execCommand("copy");
+  //   document.body.removeChild(textarea);
+  // }
+
+  console.log(rendered);
 
   const message: Office.NotificationMessageDetails = {
     type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
-    message: subject + " has been selected." + end.toDateString(),
+    message: "The message has been copied",
     icon: "Icon.80x80",
     persistent: true,
   };
@@ -68,16 +122,16 @@ Office.actions.associate("action", action);
  * @param input The Office object to get the value from.
  * @returns A promise that resolves with the value of the property.
  */
-function getValue<T>(input : any): Promise<T> {
-      return new Promise<T>((resolve, reject) => {
-            input.getAsync((asyncResult) => {
-        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-            reject(asyncResult.error.message);
-            return;
-        }
+function getValue<T>(input: any): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    input.getAsync((asyncResult) => {
+      if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+        reject(asyncResult.error.message);
+        return;
+      }
 
-        // Display the subject on the page.
-        resolve(asyncResult.value);
+      // Display the subject on the page.
+      resolve(asyncResult.value);
     });
   });
 }
