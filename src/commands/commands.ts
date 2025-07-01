@@ -61,27 +61,18 @@ async function action(event: Office.AddinCommands.Event) {
     const engine = new Liquid();
     const rendered = await engine.parseAndRender(template, data);
 
-    // // Now `rendered` contains your Markdown string
-    // // Copy to clipboard
-    // if (navigator.clipboard && window.isSecureContext) {
-    //   await navigator.clipboard.writeText(rendered);
-    // } else {
-    //   // Fallback for older browsers or non-secure context
-    //   const textarea = document.createElement("textarea");
-    //   textarea.value = rendered;
-    //   document.body.appendChild(textarea);
-    //   textarea.select();
-    //   document.execCommand("copy");
-    //   document.body.removeChild(textarea);
-    // }
-
-    console.log(rendered);
+    const popup = window.open("", "popup", "width=600,height=400");
+    if (popup) {
+      popup.document.write(`<div>${rendered}</div>`);
+      popup.document.close();
+    }
 
     Notify();
 
     // Be sure to indicate when the add-in command function is complete.
     event.completed();
   } catch (error: any) {
+    console.log(error);
     // Show error notification
     const errorMessage: Office.NotificationMessageDetails = {
       type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
