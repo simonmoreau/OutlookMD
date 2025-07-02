@@ -63,7 +63,7 @@ async function action(event: Office.AddinCommands.Event) {
 
     const popup = window.open("", "popup", "width=600,height=400");
     if (popup) {
-      popup.document.write(`<div>${rendered}</div>`);
+      popup.document.write(`<pre style="white-space: pre-wrap; margin:0;">${rendered}</pre>`);
       popup.document.close();
     }
 
