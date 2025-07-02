@@ -35,7 +35,7 @@ Office.onReady(() => {
  * @param event
  */
 async function action(event: Office.AddinCommands.Event) {
-  const item = Office.context.mailbox.item as Office.MessageRead | Office.AppointmentRead;
+  const item = Office.context.mailbox.item as Office.AppointmentCompose | Office.AppointmentRead;
 
   if (item.itemType !== Office.MailboxEnums.ItemType.Appointment) {
     const errorMessage: Office.NotificationMessageDetails = {
@@ -51,12 +51,13 @@ async function action(event: Office.AddinCommands.Event) {
     event.completed();
     return;
   }
+
+  let lastError: any = null;
+
   try {
-    // Type assertion for AppointmentRead
-    const appointment = item as Office.AppointmentRead;
 
     // Retrieve appointment details
-    const data = await GetAppointementDetails(appointment);
+    const data = await GetAppointementDetails(item);
 
     const engine = new Liquid();
     const rendered = await engine.parseAndRender(template, data);
@@ -69,10 +70,8 @@ async function action(event: Office.AddinCommands.Event) {
 
     Notify();
 
-    // Be sure to indicate when the add-in command function is complete.
-    event.completed();
-  } catch (error: any) {
-    console.log(error);
+  } catch (error) {
+    lastError = error;
     // Show error notification
     const errorMessage: Office.NotificationMessageDetails = {
       type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
@@ -85,6 +84,8 @@ async function action(event: Office.AddinCommands.Event) {
       errorMessage
     );
   } finally {
+
+    // Be sure to indicate when the add-in command function is complete.
     event.completed();
   }
 }
@@ -107,7 +108,7 @@ function Notify() {
   );
 }
 
-async function GetAppointementDetails(appointment: Office.AppointmentRead) {
+async function GetAppointementDetails(appointment: Office.AppointmentCompose | Office.AppointmentRead) {
   const subject: string = await getValue<string>(appointment.subject);
   const start = await getValue<Date>(appointment.start);
   const end = await getValue<Date>(appointment.end);
@@ -139,14 +140,17 @@ async function GetAppointementDetails(appointment: Office.AppointmentRead) {
  */
 function getValue<T>(input: any): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    input.getAsync((asyncResult) => {
+    if (input && typeof input.getAsync === "function") {
+          input.getAsync((asyncResult) => {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
         reject(asyncResult.error.message);
         return;
       }
-
       // Display the subject on the page.
       resolve(asyncResult.value);
     });
+    } else {
+      resolve(input as T);
+    }
   });
 }
