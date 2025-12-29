@@ -91,6 +91,50 @@
               </Group>
             </OfficeTab>
           </ExtensionPoint>
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="msgReadGroup2">
+                <Label resid="GroupLabel"/>
+                <Control xsi:type="Button" id="msgReadButton">
+                  <Label resid="ActionButtonSendMail.Label"/>
+                  <Supertip>
+                    <Title resid="ActionButtonSendMail.Label"/>
+                    <Description resid="ActionButtonSendMail.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>actionSendMail</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="msgComposeGroup">
+                <Label resid="GroupLabel"/>
+                <Control xsi:type="Button" id="msgComposeButton">
+                  <Label resid="ActionButtonSendMail.Label"/>
+                  <Supertip>
+                    <Title resid="ActionButtonSendMail.Label"/>
+                    <Description resid="ActionButtonSendMail.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>actionSendMail</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
         </DesktopFormFactor>
       </Host>
     </Hosts>
@@ -108,10 +152,12 @@
         <bt:String id="GroupLabel" DefaultValue="Contoso Add-in"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Show Task Pane"/>
         <bt:String id="ActionButton.Label" DefaultValue="Markdown"/>
+        <bt:String id="ActionButtonSendMail.Label" DefaultValue="Send To n8n"/>
       </bt:ShortStrings>
       <bt:LongStrings>
         <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Opens a pane displaying all available properties."/>
         <bt:String id="ActionButton.Tooltip" DefaultValue="Convert the appointment details to Markdown format."/>
+        <bt:String id="ActionButtonSendMail.Tooltip" DefaultValue="Send To n8n."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

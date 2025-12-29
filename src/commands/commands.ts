@@ -30,6 +30,61 @@ Office.onReady(() => {
   // If needed, Office.js is ready to be called.
 });
 
+
+/**
+ * Shows a notification when the add-in command is executed.
+ * @param event
+ */
+async function actionSendMail(event: Office.AddinCommands.Event) {
+  const item = Office.context.mailbox.item as Office.MessageCompose | Office.MessageRead;
+
+  let lastError: any = null;
+
+  try {
+    // Get the body of the mail item
+    let bodyContent = "";
+    if (item.body && typeof item.body.getAsync === "function") {
+      bodyContent = await new Promise((resolve, reject) => {
+        item.body.getAsync("text", (result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(result.value);
+          } else {
+            reject(result.error.message);
+          }
+        });
+      });
+    }
+
+    // Send the body content via POST REST call
+    await fetch("https://example.com/api/receive", {
+      method: "POST",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: bodyContent
+    });
+
+    Notify();
+
+  } catch (error) {
+    lastError = error;
+    // Show error notification
+    const errorMessage: Office.NotificationMessageDetails = {
+      type: Office.MailboxEnums.ItemNotificationMessageType.ErrorMessage,
+      message: `Error: ${error.message || error}`,
+      icon: "Icon.80x80",
+      persistent: true,
+    };
+    Office.context.mailbox.item.notificationMessages.replaceAsync(
+      "ActionPerformanceNotification",
+      errorMessage
+    );
+  } finally {
+    // Be sure to indicate when the add-in command function is complete.
+    event.completed();
+  }
+}
+
 /**
  * Shows a notification when the add-in command is executed.
  * @param event
@@ -92,6 +147,7 @@ async function action(event: Office.AddinCommands.Event) {
 
 // Register the function with Office.
 Office.actions.associate("action", action);
+Office.actions.associate("actionSendMail", actionSendMail);
 
 function Notify() {
   const message: Office.NotificationMessageDetails = {
