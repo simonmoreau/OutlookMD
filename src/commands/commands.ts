@@ -30,7 +30,6 @@ Office.onReady(() => {
   // If needed, Office.js is ready to be called.
 });
 
-
 /**
  * Shows a notification when the add-in command is executed.
  * @param event
@@ -41,31 +40,19 @@ async function actionSendMail(event: Office.AddinCommands.Event) {
   let lastError: any = null;
 
   try {
-    // Get the body of the mail item
-    let bodyContent = "";
-    if (item.body && typeof item.body.getAsync === "function") {
-      bodyContent = await new Promise((resolve, reject) => {
-        item.body.getAsync("text", (result) => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            resolve(result.value);
-          } else {
-            reject(result.error.message);
-          }
-        });
-      });
-    }
+    // Retrieve message details
+    const payload = await GetMessageDetails(item);
 
-    // Send the body content via POST REST call
+    // Send the JSON payload via POST REST call
     await fetch("https://example.com/api/receive", {
       method: "POST",
       headers: {
-        "Content-Type": "text/plain"
+        "Content-Type": "application/json",
       },
-      body: bodyContent
+      body: JSON.stringify(payload),
     });
 
     Notify();
-
   } catch (error) {
     lastError = error;
     // Show error notification
@@ -110,7 +97,6 @@ async function action(event: Office.AddinCommands.Event) {
   let lastError: any = null;
 
   try {
-
     // Retrieve appointment details
     const data = await GetAppointementDetails(item);
 
@@ -124,7 +110,6 @@ async function action(event: Office.AddinCommands.Event) {
     }
 
     Notify();
-
   } catch (error) {
     lastError = error;
     // Show error notification
@@ -139,7 +124,6 @@ async function action(event: Office.AddinCommands.Event) {
       errorMessage
     );
   } finally {
-
     // Be sure to indicate when the add-in command function is complete.
     event.completed();
   }
@@ -164,7 +148,9 @@ function Notify() {
   );
 }
 
-async function GetAppointementDetails(appointment: Office.AppointmentCompose | Office.AppointmentRead) {
+async function GetAppointementDetails(
+  appointment: Office.AppointmentCompose | Office.AppointmentRead
+) {
   const subject: string = await getValue<string>(appointment.subject);
   const start = await getValue<Date>(appointment.start);
   const end = await getValue<Date>(appointment.end);
@@ -189,6 +175,40 @@ async function GetAppointementDetails(appointment: Office.AppointmentCompose | O
   return data;
 }
 
+async function GetMessageDetails(message: Office.MessageCompose | Office.MessageRead) {
+  const subject: string = await getValue<string>(message.subject);
+  // const body = await getValue<Office.Body>(message.body);
+  const conversationId = await getValue<string>(message.conversationId);
+  const from = await getValue<Office.EmailAddressDetails>(message.from);
+  const to = await getValue<Office.EmailAddressDetails[]>(message.to);
+  const cc = await getValue<Office.EmailAddressDetails[]>(message.cc);
+
+  let body = "";
+  if (message.body && typeof message.body.getAsync === "function") {
+    body = await new Promise<string>((resolve, reject) => {
+      message.body.getAsync("text", (result) => {
+        if (result.status === Office.AsyncResultStatus.Succeeded) {
+          resolve(result.value);
+        } else {
+          reject(result.error.message);
+        }
+      });
+    });
+  }
+
+  // Build the JSON payload
+  const payload = {
+    subject,
+    from,
+    to,
+    cc,
+    conversationId,
+    body,
+  };
+
+  return payload;
+}
+
 /**
  * Gets the value of a property from an Office object asynchronously.
  * @param input The Office object to get the value from.
@@ -197,14 +217,14 @@ async function GetAppointementDetails(appointment: Office.AppointmentCompose | O
 function getValue<T>(input: any): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     if (input && typeof input.getAsync === "function") {
-          input.getAsync((asyncResult) => {
-      if (asyncResult.status === Office.AsyncResultStatus.Failed) {
-        reject(asyncResult.error.message);
-        return;
-      }
-      // Display the subject on the page.
-      resolve(asyncResult.value);
-    });
+      input.getAsync((asyncResult) => {
+        if (asyncResult.status === Office.AsyncResultStatus.Failed) {
+          reject(asyncResult.error.message);
+          return;
+        }
+        // Display the subject on the page.
+        resolve(asyncResult.value);
+      });
     } else {
       resolve(input as T);
     }
