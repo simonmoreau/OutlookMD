@@ -145,7 +145,7 @@
         <bt:Image id="Icon.80x80" DefaultValue="https://storageoutlookmd.z6.web.core.windows.net/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://storageoutlookmd.z6.web.core.windows.net/commands.html"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://storageoutlookmd.z6.web.core.windows.net/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
