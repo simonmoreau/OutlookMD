@@ -40,11 +40,35 @@ async function actionSendMail(event: Office.AddinCommands.Event) {
   let lastError: any = null;
 
   try {
-    // Retrieve message details
-    const payload = await GetMessageDetails(item);
+    // Retrieve message body
+    const message = Office.context.mailbox.item;
+
+    let body = "";
+    if (message.body && typeof message.body.getAsync === "function") {
+      body = await new Promise<string>((resolve, reject) => {
+        message.body.getAsync("text", (result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(result.value);
+          } else {
+            reject(result.error.message);
+          }
+        });
+      });
+    }
+
+    // Build the JSON payload
+    const payload = {
+      id: message.itemId,
+      subject: message.subject,
+      from: message.from,
+      to: message.to,
+      cc: message.cc,
+      conversationId: message.conversationId,
+      body: body,
+    };
 
     // Send the JSON payload via POST REST call
-    await fetch("https://example.com/api/receive", {
+    await fetch("https://n8n.bim42.com/webhook-test/0bee44e7-12ba-407b-981d-66f48801b0f8", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
