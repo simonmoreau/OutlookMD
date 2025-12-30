@@ -67,8 +67,14 @@ async function actionSendMail(event: Office.AddinCommands.Event) {
       body: body,
     };
 
+    const testUrl = "https://n8n.bim42.com/webhook-test/0bee44e7-12ba-407b-981d-66f48801b0f8";
+    const productionUrl = "https://n8n.bim42.com/webhook/0bee44e7-12ba-407b-981d-66f48801b0f8";
+
+    const isProduction = process.env.NODE_ENV === "production";
+    const url = isProduction ? productionUrl : testUrl;
+
     // Send the JSON payload via POST REST call
-    await fetch("https://n8n.bim42.com/webhook-test/0bee44e7-12ba-407b-981d-66f48801b0f8", {
+    await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
